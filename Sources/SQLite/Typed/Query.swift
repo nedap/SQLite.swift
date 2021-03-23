@@ -919,15 +919,19 @@ extension Connection {
 
     public func prepare(_ query: QueryType) throws -> AnySequence<Row> {
         let expression = query.expression
+        
         let statement = try prepare(expression.template, expression.bindings)
 
         let columnNames = try columnNamesForQuery(query)
+        
+        // testStatement with failableNext() is used to try and throw error when arise
+        let testStatement = try prepare(expression.template, expression.bindings)
+        let _ = try testStatement.failableNext().map { Row(columnNames, $0) }
 
         return AnySequence {
             AnyIterator { statement.next().map { Row(columnNames, $0) } }
         }
     }
-    
 
     public func prepareRowIterator(_ query: QueryType) throws -> RowIterator {
         let expression = query.expression
